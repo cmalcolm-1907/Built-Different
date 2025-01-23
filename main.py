@@ -2,16 +2,17 @@
 
 # Pilots
 class Pilot:
-    def __init__(self,name,skill,mech,salary):
+    def __init__(self,name,team,skill,mech,salary):
         self.name=name
+        self.team=team
         self.skill=skill
         self.mech=mech
         self.salary=salary
 
     def __str__(self):
-        returnstring = f'{self.name}\nSkill: {self.skill}\n'
+        returnstring = f'{self.name}\nTeam: {self.team}\nSkill: {self.skill}\n'
         returnstring += str(self.mech)
-        returnstring += f'\nSalary: {self.salary}\n'
+        returnstring += f'\nSalary: {self.salary}'
         return returnstring
 
 class Mech:
@@ -40,28 +41,43 @@ class Team:
         return returnstring
         
     
-Pilots={
-    'Alice':Pilot('Alice',8,'coyote',80),
-    'Brent':Pilot('Brent',7,'anteater',65),
-    'Connor':Pilot('Connor',6,'badger',60),
-    'David':Pilot('David',7,'coyote',70),
-}
-
 Mechs={
     'anteater':Mech('anteater',7,4,3,140),
     'badger':Mech('badger',6,5,5,160),
     'coyote':Mech('coyote',5,6,7,180),
 }
+
+Pilots={
+    'Alice':Pilot('Alice',None,8,Mechs['coyote'],80),
+    'Brent':Pilot('Brent',None,7,Mechs['anteater'],65),
+    'Connor':Pilot('Connor',None,6,Mechs['badger'],60),
+    'David':Pilot('David',None,7,Mechs['coyote'],70),
+}
+
 Teams={
     'Alpha Team':Team('Alpha Team',[Pilots['Alice'],Pilots['Connor']],0,0,200),
     'Bravo Team':Team('Bravo Team',[Pilots['David'],Pilots['Brent']],0,0,200),
 }
 
+def Update_Teams(input_teams):
+    for team in input_teams:
+        for pilot in input_teams[team].pilots:
+            pilot.team=team
+
 def combat(t1,t2):
-    return t1,t2
+    fighters =[]
+    for pilot in t1.pilots:
+        fighters.append(pilot)
+    for pilot in t2.pilots:
+        fighters.append(pilot)
+    sorted_fighters = sorted(fighters,key=lambda pilot: pilot.mech.speed*pilot.skill)
+    return sorted_fighters
 
 def mainloop():
-    for team in Teams:
-        print(Teams[team])
+    Update_Teams(Teams)
+    ordered_list = combat(Teams['Alpha Team'],Teams['Bravo Team'])
+    for fighter in ordered_list:
+        print(fighter)
+        print(f'Initiative: {fighter.skill*fighter.mech.speed}\n')
 
 mainloop()
