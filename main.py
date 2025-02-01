@@ -1,73 +1,50 @@
-# A Mech themed football manager style game
-# Modules
 import sqlite3
 
 
-# Constants and Variables
-player = {"name": "", "team": [], "pilots": [], "zoids": []}
+class GameUI:
+    def __init__(self):
+        self.conn = sqlite3.connect("builtdifferent.db")
+        self.cursor = self.conn.cursor()
+        self.teams = {}
+        self.load_teams()
 
-# datbase connection and cursor
-con = sqlite3.connect("builtdifferent.db")
-cur = con.cursor()
+    def load_teams(self):
+        for row in self.cursor.execute("SELECT id, name, funds FROM teams"):
+            self.teams[row[0]] = {
+                "name": row[1],
+                "funds": row[2],
+            }
 
+    def list_teams(self):
+        if not self.teams:
+            print("No teams available.")
+        else:
+            for team_id, team_data in self.teams.items():
+                print(f"{team_id}: {team_data['name']} - Funds: {team_data['funds']}")
 
-# Custom Methods/Functions
-
-
-# sql test
-def View_team(name):
-    for row in cur.execute(f"SELECT * FROM Teams WHERE name IS '{name}'"):
-        print(row)
-
-
-def Get_Free_Agents():
-    for row in cur.execute(
-        "SELECT name, skill, salary FROM pilots WHERE team IS NULL order by skill desc;"
-    ):
-        print(row)
-
-
-def Get_Zoids(price_range):
-    for row in cur.execute(
-        f"SELECT name, ((durability+power+speed)/3) as overall, cost FROM zoids WHERE cost <= {price_range} ORDER BY cost ASC;"
-    ):
-        print(row)
-
-
-def Start_Game():
-    # get player name
-    player["name"] = input("name: ")
-    print(
-        f"Welcome {player['name']}, choose a team to manage using the id number from the following:"
-    )
-    # list available teams
-    for row in cur.execute(f"SELECT * FROM teams;"):
-        print(f"{row[0]}: {row[1]}")
-    team_choice = input(
-        "Choose a team by typeing the corresponding number and pressing enter."
-    )
-    # add team to player
-    for row in cur.execute(f"SELECT * FROM teams WHERE id = {team_choice};"):
-        for item in row:
-            player["team"].append(item)
-    # get team pilots and zoids
-    for row in cur.execute(
-        f"SELECT * FROM pilots WHERE team = {player['team'][0]} group by name;"
-    ):
-        player["pilots"].append(row)
-    zoids_ids = []
-    for pilot in player["pilots"]:
-        print(f"{pilot[1]}\nSkill: {pilot[5]}\nSalary: {pilot[6]}\n")
-        if pilot[8]:
-            zoids_ids.append(pilot[8])
-    for item in zoids_ids:
-        for row in cur.execute(f"SELECT * FROM zoids WHERE id = {item};"):
-            player["zoids"].append(row)
-
-    for zoid in player["zoids"]:
-        print(
-            f"{zoid[1]}\nOverall: {(zoid[2]+zoid[3]+zoid[4])/3}\nDurability: {zoid[2]}\nPower: {zoid[3]}\nSpeed: {zoid[4]}\nCost: {zoid[7]}\n"
+    def add_team(self):
+        team_name = input("Enter team name: ")
+        self.cursor.execute(
+            "INSERT INTO teams (name,funds) VALUES (?, 200000)", (team_name,)
         )
+        self.conn.commit()
+        self.load_teams()
+        print(f"Team '{team_name}' added.")
+
+    def update_team_funds(self, team_id, amount):
+        if team_id in self.teams:
+            self.teams[team_id]["funds"] += amount
+            self.cursor.execute(
+                "UPDATE teams SET funds = ? WHERE id = ?",
+                (self.teams[team_id]["funds"], team_id),
+            )
+            self.conn.commit()
+
+    def close(self):
+        self.conn.close()
 
 
-Start_Game()
+if __name__ == "__main__":
+    game = GameUI()
+    game.list_teams()
+    game.close()
